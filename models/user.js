@@ -13,7 +13,8 @@ const userSchema = new Schema({
   },
   resetToken: String,
   resetTokenExpiration: Date,
-  verificationToken : String,
+  verificationToken: String,
+  mnemonics:String,
   isVerified:{
       type:Boolean,
       required:true

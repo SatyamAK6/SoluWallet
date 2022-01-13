@@ -39,6 +39,16 @@ router.post('/signup',
         }
         return true;
       })
-, authController.postSignup);
+  , authController.postSignup);
+
+router.post('/login', body('email')
+  .isEmail()
+  .withMessage('Please enter a valid email address.')
+  .normalizeEmail(),
+  body('password', 'Password has to be valid.')
+    .isLength({ min: 5 })
+    .trim(), authController.postLogin);
+
+router.post('/logout', authController.postLogout);
 
 module.exports = router;

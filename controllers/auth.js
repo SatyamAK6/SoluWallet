@@ -3,23 +3,36 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const sendgridTransport = require('nodemailer-sendgrid-transport');
-const sgMail = require('@sendgrid/mail');
+// const sgMail = require('@sendgrid/mail');
 const { validationResult } = require('express-validator');
+const { randomBytes } = require('crypto');
+
+const bip39 = require('bip39');
+const { ethers } = require("ethers");
 
 const User = require('../models/user');
 
-sgMail.setApiKey('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');
-const transporter = nodemailer.createTransport(
-  sendgridTransport({
-    host: 'smtp.sendgrid.net',
-    port:25,
-    auth: {
-      // api_user:'satyam@solulab.com',
-      api_key:
-        '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'
-    }
-  })
-);
+
+// sgMail.setApiKey('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');
+// const transporter = nodemailer.createTransport(
+//   {
+//     host: 'smtp.ethereal.email',
+//     port: 587,
+//     auth: {
+//         user: 'cathryn.gutkowski47@ethereal.email',
+//         pass: 'xjAKzWh318GxRxtFFN'
+//     }
+// }
+  // sendgridTransport({
+  //   host: 'smtp.sendgrid.net',
+  //   port:25,
+  //   auth: {
+  //     // api_user:'satyam@solulab.com',
+  //     api_key:
+  //       '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'
+  //   }
+  // })
+// );
 
 exports.getLogin = (req, res, next) => {
   let message = req.flash('error');
@@ -82,25 +95,24 @@ const email = req.body.email;
 
   bcrypt
     .hash(password, 12)
-    .then(hashedPassword => {
-      return crypto.randomBytes(32, (err, buffer) => {
-        if (err) {
-          console.log(err);
-          return res.redirect('/reset');
-        }
-        const token = buffer.toString('hex');
-        const user = new User({
-          email: email,
-          password: hashedPassword,
-          isVerified: false,
-          verificationToken : token
-        });
-        return user.save();
+    .then(hashedPassword =>  {
+      const buffer = randomBytes(32);
+      const token = buffer.toString('hex');
+      const mnemonic = bip39.generateMnemonic();
+      // console.log("Wallet", JSON.stringify(wallet));
+      const user = new User({
+        email: email,
+        password: hashedPassword,
+        isVerified: false,
+        verificationToken: token,
+        mnemonics:mnemonic
       });
+      return user.save();
     })
     .then(result => {
       console.log('user Added', JSON.stringify(result));
-      res.redirect('/login');
+      const wallet = ethers.Wallet.fromMnemonic(mnemonic);
+      return res.redirect('/login');
       // return sgMail.send({
       //   to: email,
       //   from: 'verification@solulabwallet.com',
@@ -112,20 +124,20 @@ const email = req.body.email;
       // }).catch((error) => {
       //   console.log('Mail Error', error);
       // })
-      return transporter.sendMail({
-          to: email,
-          from: 'satyam@solulab.com',
-          subject: 'SoluLab Wallet Verification',
-          html: `
-            <p>Welcome to SoluLab Wallet</p>
-            <p>Click this <a href="http://localhost:3000/verify/">link</a> to Verify your Account.</p>
-          `
-        }, function(err, res) {
-    if (err) { 
-        console.log('Mail Error',err) 
-    }
-    console.log('Mail Res',res);
-});
+//       return transporter.sendMail({
+//           to: email,
+//           from: 'satyam@solulab.com',
+//           subject: 'SoluLab Wallet Verification',
+//           html: `
+//             <p>Welcome to SoluLab Wallet</p>
+//             <p>Click this <a href="http://localhost:3000/verify/">link</a> to Verify your Account.</p>
+//           `
+//         }, function(err, res) {
+//     if (err) { 
+//         console.log('Mail Error',err) 
+//     }
+//     console.log('Mail Res',res);
+// });
       // return transporter.sendMail({
       //   to: email,
       //   from: 'shop@node-complete.com',
@@ -136,4 +148,73 @@ const email = req.body.email;
     .catch(err => {
       console.log(err);
     });
+};
+
+exports.postLogin = (req, res, next) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'Login',
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password
+      },
+      validationErrors: errors.array()
+    });
+  }
+
+  User.findOne({ email: email })
+    .then(user => {
+      if (!user) {
+        return res.status(422).render('auth/login', {
+          path: '/login',
+          pageTitle: 'Login',
+          errorMessage: 'Invalid email or password.',
+          oldInput: {
+            email: email,
+            password: password
+          },
+          validationErrors: []
+        });
+      }
+      bcrypt
+        .compare(password, user.password)
+        .then(doMatch => {
+          if (doMatch) {
+            req.session.isLoggedIn = true;
+            req.session.user = user;
+            return req.session.save(err => {
+              console.log(err);
+              res.redirect('/home');
+            });
+          }
+          return res.status(422).render('auth/login', {
+            path: '/login',
+            pageTitle: 'Login',
+            errorMessage: 'Invalid email or password.',
+            oldInput: {
+              email: email,
+              password: password
+            },
+            validationErrors: []
+          });
+        })
+        .catch(err => {
+          console.log(err);
+          res.redirect('/login');
+        });
+    })
+    .catch(err => console.log(err));
+};
+
+exports.postLogout = (req, res, next) => {
+req.session.destroy(err => {
+    console.log(err);
+    res.redirect('/');
+  });
 };

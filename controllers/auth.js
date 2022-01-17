@@ -15,7 +15,7 @@ const User = require('../models/user');
 const {getBalance, initialTransfer } = require('../interface/contract');
 
 
-// sgMail.setApiKey('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');
+// sgMail.setApiKey('');
 // const transporter = nodemailer.createTransport(
 //   {
 //     host: 'smtp.ethereal.email',
@@ -31,7 +31,7 @@ const {getBalance, initialTransfer } = require('../interface/contract');
   //   auth: {
   //     // api_user:'satyam@solulab.com',
   //     api_key:
-  //       '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'
+  //       ''
   //   }
   // })
 // );

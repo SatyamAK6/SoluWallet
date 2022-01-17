@@ -6,11 +6,13 @@ const sendgridTransport = require('nodemailer-sendgrid-transport');
 // const sgMail = require('@sendgrid/mail');
 const { validationResult } = require('express-validator');
 const { randomBytes } = require('crypto');
+const _ = require('lodash');
 
 const bip39 = require('bip39');
 const { ethers } = require("ethers");
 
 const User = require('../models/user');
+const {getBalance, initialTransfer } = require('../interface/contract');
 
 
 // sgMail.setApiKey('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');
@@ -99,19 +101,22 @@ const email = req.body.email;
       const buffer = randomBytes(32);
       const token = buffer.toString('hex');
       const mnemonic = bip39.generateMnemonic();
+      const wallet = ethers.Wallet.fromMnemonic(mnemonic);
       // console.log("Wallet", JSON.stringify(wallet));
       const user = new User({
         email: email,
         password: hashedPassword,
         isVerified: false,
         verificationToken: token,
-        mnemonics:mnemonic
+        mnemonics: mnemonic,
+        address:wallet.address
       });
       return user.save();
     })
-    .then(result => {
+    .then(async (result) => {
       console.log('user Added', JSON.stringify(result));
-      const wallet = ethers.Wallet.fromMnemonic(mnemonic);
+      const bal = await initialTransfer(result.address);
+      console.log('User Credited with ' + bal + ' SLT');
       return res.redirect('/login');
       // return sgMail.send({
       //   to: email,
@@ -187,6 +192,8 @@ exports.postLogin = (req, res, next) => {
         .then(doMatch => {
           if (doMatch) {
             req.session.isLoggedIn = true;
+            // const userData = _.omit(user, ["mnemonics", "verificationToken", "password"]);
+            // console.log('userData', JSON.stringify(userData));
             req.session.user = user;
             return req.session.save(err => {
               console.log(err);

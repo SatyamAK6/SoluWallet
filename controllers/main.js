@@ -1,4 +1,5 @@
-const { ethers } = require("ethers");
+const {getBalance, initialTransfer } = require('../interface/contract');
+
 
 exports.getIndex = (req, res, next) => {
     res.render('main', {
@@ -7,12 +8,14 @@ exports.getIndex = (req, res, next) => {
     });
 };
   
-exports.getHome = (req, res, next) => {
-    console.log('HOME', JSON.stringify(req.session.user.mnemonics));
-    const wallet = ethers.Wallet.fromMnemonic(req.session.user.mnemonics);
+exports.getHome = async (req, res, next) => {
+    console.log('HOME', JSON.stringify(req.session.user));
+    const balance = await getBalance(req.session.user.address);
+    console.log("Balance", balance);
     res.render('wallet/home', {
         email: req.session.user.email,
-        Address: wallet.address,
+        Address: req.session.user.address,
+        Balance : balance,
         pageTitle: 'Solulab Wallet',
         path: '/home'
     });

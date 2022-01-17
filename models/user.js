@@ -14,7 +14,8 @@ const userSchema = new Schema({
   resetToken: String,
   resetTokenExpiration: Date,
   verificationToken: String,
-  mnemonics:String,
+  mnemonics: String,
+  address:String,
   isVerified:{
       type:Boolean,
       required:true

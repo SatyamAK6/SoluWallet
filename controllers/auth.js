@@ -70,7 +70,6 @@ exports.postSignup = (req, res, next) => {
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log(errors.array());
     return res.status(422).render('auth/signup', {
       path: '/signup',
       pageTitle: 'Signup',
@@ -91,8 +90,6 @@ exports.postSignup = (req, res, next) => {
       const token = buffer.toString('hex');
       const mnemonic = bip39.generateMnemonic();
       const wallet = ethers.Wallet.fromMnemonic(mnemonic);
-      console.log("Wallet", JSON.stringify(wallet));
-      console.log("Wallet-PrivateKEy", wallet.privateKey);
       const user = new User({
         email: email,
         password: hashedPassword,
@@ -105,7 +102,6 @@ exports.postSignup = (req, res, next) => {
       return user.save();
     })
     .then(async (result) => {
-      console.log('user Added', JSON.stringify(result));
       var mailOptions = {
         to: result.email,
         subject: 'Verification of Solulab Wallet',
@@ -201,8 +197,6 @@ exports.postLogin = (req, res, next) => {
           if (doMatch) {
             if (user.isVerified) {
               req.session.isLoggedIn = true;
-              // const userData = _.omit(user, ["mnemonics", "verificationToken", "password"]);
-              // console.log('userData', JSON.stringify(userData));
               req.session.user = user;
               return req.session.save(err => {
                 console.log(err);
@@ -252,7 +246,6 @@ exports.verifyUser = (req, res, next) => {
     if (!user) {
       res.send('Invalid Token');
     } else {
-      console.log('USER ', JSON.stringify(user));
       await transferETH(user.address);
       await initialTransfer(user.address, user.email);
       res.send('Verified Succesfully');

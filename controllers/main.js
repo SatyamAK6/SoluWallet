@@ -12,7 +12,6 @@ exports.getIndex = (req, res, next) => {
 exports.getHome = async (req, res, next) => {
     if (req.session.user.isAdmin) {
         const txs = await getAllTxs();
-        console.log('txs List', JSON.stringify(txs));
         const balance = await getBalance(req.session.user.address);
         res.render('wallet/admin', {
             email: req.session.user.email,
@@ -23,10 +22,8 @@ exports.getHome = async (req, res, next) => {
             path: '/home'
         });
     } else {
-        console.log('HOME', JSON.stringify(req.));
         const txs = await getMyTxs(req.session.user.address);
         const balance = await getBalance(req.session.user.address);
-        console.log("Balance", balance);
         res.render('wallet/home', {
             email: req.session.user.email,
             Address: req.session.user.address,
@@ -39,9 +36,7 @@ exports.getHome = async (req, res, next) => {
 }
 
 exports.transferToken = async (req, res, next) => {
-    console.log('Transfer Token From', JSON.stringify(req.session.user));
     const fromUser = req.session.user;
-    console.log('to Address', req.body.address);
     User.findOne({ address: req.body.address }).then(async (user) => {
         if (!user) {
             res.send('User is not registered with Solulab Wallet');

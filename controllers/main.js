@@ -23,7 +23,7 @@ exports.getHome = async (req, res, next) => {
             path: '/home'
         });
     } else {
-        console.log('HOME', JSON.stringify(req.errorMessage));
+        console.log('HOME', JSON.stringify(req.));
         const txs = await getMyTxs(req.session.user.address);
         const balance = await getBalance(req.session.user.address);
         console.log("Balance", balance);
@@ -44,7 +44,7 @@ exports.transferToken = async (req, res, next) => {
     console.log('to Address', req.body.address);
     User.findOne({ address: req.body.address }).then(async (user) => {
         if (!user) {
-            res.redirect('/home',{errorMessage:'User is not registered with Solulab Wallet'});
+            res.send('User is not registered with Solulab Wallet');
         } else {
             if (!user.isVerified) {
                 res.send('User is not Verified yet.');

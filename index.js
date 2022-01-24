@@ -1,4 +1,5 @@
-const path = require('path'); 
+const path = require('path');
+const fs = require('fs');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -10,9 +11,8 @@ const flash = require('connect-flash');
 
 const User = require('./models/user');
 
-const MONGODB_URI =
-  'mongodb+srv://ksatyama6:8238898935@awscluster.hfvoz.mongodb.net/WebWallet?retryWrites=true&w=majority';
-
+const MONGODB_URI = fs.readFileSync('.mongodb').toString().trim();
+ 
 const app = express();
 const store = new MongoDBStore({
 uri: MONGODB_URI,

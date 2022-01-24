@@ -1,41 +1,19 @@
 <div class="backdrop"></div>
-<header class="main-header">
-    <button id="side-menu-toggle">Menu</button>
-    <nav class="main-header__nav">
-        <ul class="main-header__item-list">
-            <li class="main-header__item">
-                <a style="color: aqua;" href="/"><h3>SoluLab Wallet</h3></a>
-            </li>
-            </ul>
-            <ul class="main-header__item-list">
-            <% if (!isAuthenticated) { %>
-            <% } else { %>
-                <li class="main-header__item">
-                    <form action="/logout" method="post">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="submit">Logout</button>
-                    </form>
-                </li>
-            <% } %>
-        </ul>
-    </nav>
-</header>
+<nav class="navbar navbar-expand-md navbar-light bg-info">
+    <a class="navbar-brand text-white" href="#">SoluLab Wallet</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
 
-<nav class="mobile-nav">
-    <ul class="mobile-nav__item-list">
-        <li class="main-header__item">
-            <a style="color: aqua;" href="/"><h3>SoluLab Wallet</h3></a>
-        </li>
-    </ul>
-    <ul class="mobile-nav__item-list">
-        <% if (!isAuthenticated) { %>
-        <% } else { %>
-            <li class="mobile-nav__item">
-                <form action="/logout" method="post">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <button type="submit">Logout</button>
-                </form>
-            </li>
-        <% } %>
-    </ul>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+        </ul>
+        <form class="form-inline my-2" action='/logout' method="post">
+            <% if (isAuthenticated) { %>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-outline-white my-2 my-sm-0" type="submit">Logout</button>
+            <% } %>
+        </form>
+    </div>
 </nav>

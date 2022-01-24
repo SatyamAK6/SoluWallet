@@ -11,4 +11,6 @@ router.get('/', mainController.getIndex);
 
 router.get('/home', isAuth, mainController.getHome);
 
+router.post('/sendToken', isAuth, mainController.transferToken);
+
 module.exports = router;

@@ -1,51 +1,58 @@
 <%- include('../includes/head.ejs') %>
-    <link rel="stylesheet" href="/css/forms.css">
-    <link rel="stylesheet" href="/css/auth.css">
 </head>
 
 <body>
    <%- include('../includes/navigation.ejs') %>
 
     <main>
-        <% if (errorMessage) { %>
-            <div class="user-message user-message--error"><%= errorMessage %></div>
-        <% } %>
-        <form class="login-form" action="/signup" method="POST" novalidate>
-            <div class="form-control">
-                <label for="email">E-Mail</label>
-                <input 
-                    class="<%= validationErrors.find(e => e.param === 'email') ? 'invalid' : '' %>"
-                    type="email" 
-                    name="email" 
-                    id="email" 
-                    value="<%= oldInput.email %>">
+        <div class="row">
+            <div class="col-md-4 offset-4">
+                <form action="/signup" method="POST" novalidate>
+                    <% if (errorMessage) { %>
+                        <div class="col-md-8 offset-2 text-center mt-2">
+                            <div class="bg-danger text-white"><%= errorMessage %></div>
+                        </div>
+                    <% } %>
+                    <div class="col-md-8 offset-2 text-center mt-2">
+                        <label for="email">E-Mail</label>
+                        <input 
+                            class="form-control <%= validationErrors.find(e => e.param === 'email') ? 'invalid' : '' %>"
+                            type="email" 
+                            name="email" 
+                            id="email" 
+                            value="<%= oldInput.email %>">
+                    </div>
+                    <div class="col-md-8 offset-2 text-center mt-2">
+                        <label for="password">Password</label>
+                        <input 
+                            class="form-control <%= validationErrors.find(e => e.param === 'password') ? 'invalid' : '' %>"
+                            type="password" 
+                            name="password" 
+                            id="password" 
+                            value="<%= oldInput.password %>">
+                    </div>
+                    <div class="col-md-8 offset-2 text-center mt-2">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input 
+                            class="form-control <%= validationErrors.find(e => e.param === 'confirmPassword') ? 'invalid' : '' %>"
+                            type="password" 
+                            name="confirmPassword" 
+                            id="confirmPassword" 
+                            value="<%= oldInput.confirmPassword %>">
+                    </div>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="col-md-8 offset-2 text-center mt-2">
+                        <button class="btn btn-info" type="submit">Signup</button>
+                    </div>
+                </form>
             </div>
-            <div class="form-control">
-                <label for="password">Password</label>
-                <input 
-                    class="<%= validationErrors.find(e => e.param === 'password') ? 'invalid' : '' %>"
-                    type="password" 
-                    name="password" 
-                    id="password" 
-                    value="<%= oldInput.password %>">
-            </div>
-            <div class="form-control">
-                <label for="confirmPassword">Confirm Password</label>
-                <input 
-                    class="<%= validationErrors.find(e => e.param === 'confirmPassword') ? 'invalid' : '' %>"
-                    type="password" 
-                    name="confirmPassword" 
-                    id="confirmPassword" 
-                    value="<%= oldInput.confirmPassword %>">
-            </div>
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button class="btn" type="submit">Signup</button>
-        </form>
-        <div class="centered">
-            <ul>
-                <a href="/reset" style="margin-right: 2rem;">Reset Password</a>
-                <a href="/login">Log In</a>
-            </ul>
         </div>
-    </main>
+        <div class="row">
+            <div class="col-md-4 offset-4 text-center mt-2">
+                <ul class="col-md-8 offset-2 text-center">
+                    <a href="/login">Login</a>
+                </ul>
+            </div>
+        </div>
+    </main> 
 <%- include('../includes/end.ejs') %>

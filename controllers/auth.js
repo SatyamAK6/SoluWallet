@@ -1,9 +1,7 @@
-const crypto = require('crypto');
+const fs = require('fs');
 
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
-const sendgridTransport = require('nodemailer-sendgrid-transport');
-// const sgMail = require('@sendgrid/mail');
 const { validationResult } = require('express-validator');
 const { randomBytes } = require('crypto');
 const _ = require('lodash');
@@ -11,30 +9,21 @@ const _ = require('lodash');
 const bip39 = require('bip39');
 const { ethers } = require("ethers");
 
+const pass = fs.readFileSync(".mailAuth").toString().trim();
 const User = require('../models/user');
-const {getBalance, initialTransfer } = require('../interface/contract');
+const { initialTransfer, transferETH } = require('../interface/contract');
 
-
-// sgMail.setApiKey('');
-// const transporter = nodemailer.createTransport(
-//   {
-//     host: 'smtp.ethereal.email',
-//     port: 587,
-//     auth: {
-//         user: 'cathryn.gutkowski47@ethereal.email',
-//         pass: 'xjAKzWh318GxRxtFFN'
-//     }
-// }
-  // sendgridTransport({
-  //   host: 'smtp.sendgrid.net',
-  //   port:25,
-  //   auth: {
-  //     // api_user:'satyam@solulab.com',
-  //     api_key:
-  //       ''
-  //   }
-  // })
-// );
+var smtpTransport = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    tls: { rejectUnauthorized: false },
+    ssl: true,
+    service: "Gmail",
+    auth: {
+        user: "info.solulabwallet@gmail.com",
+        pass: pass
+    }
+});
 
 exports.getLogin = (req, res, next) => {
   let message = req.flash('error');
@@ -76,7 +65,7 @@ exports.getSignup = (req, res, next) => {
 };
 
 exports.postSignup = (req, res, next) => {
-const email = req.body.email;
+  const email = req.body.email;
   const password = req.body.password;
 
   const errors = validationResult(req);
@@ -102,22 +91,41 @@ const email = req.body.email;
       const token = buffer.toString('hex');
       const mnemonic = bip39.generateMnemonic();
       const wallet = ethers.Wallet.fromMnemonic(mnemonic);
-      // console.log("Wallet", JSON.stringify(wallet));
+      console.log("Wallet", JSON.stringify(wallet));
+      console.log("Wallet-PrivateKEy", wallet.privateKey);
       const user = new User({
         email: email,
         password: hashedPassword,
         isVerified: false,
         verificationToken: token,
         mnemonics: mnemonic,
-        address:wallet.address
+        address: wallet.address,
+        privateKey: wallet.privateKey
       });
       return user.save();
     })
     .then(async (result) => {
       console.log('user Added', JSON.stringify(result));
-      const bal = await initialTransfer(result.address);
-      console.log('User Credited with ' + bal + ' SLT');
-      return res.redirect('/login');
+      var mailOptions = {
+        to: result.email,
+        subject: 'Verification of Solulab Wallet',
+        //text: req.body.content,
+        html:  `<p>Welcome to SoluLab Wallet</p>
+              <p>Click this <a href="http://localhost:3000/verify/${result.verificationToken}">link</a> to Verify your Account.</p>`
+      };
+      smtpTransport.sendMail(mailOptions, function (error, response) {
+        if (error) {
+            // res.send(error);
+          console.log(error);
+        }
+        else {
+            // res.send("sent");
+          console.log('mail Sent Successfully');
+          return res.redirect('/login');
+        }
+    });
+      // const bal = await initialTransfer(result.address);
+      // console.log('User Credited with ' + bal + ' SLT');
       // return sgMail.send({
       //   to: email,
       //   from: 'verification@solulabwallet.com',
@@ -191,13 +199,25 @@ exports.postLogin = (req, res, next) => {
         .compare(password, user.password)
         .then(doMatch => {
           if (doMatch) {
-            req.session.isLoggedIn = true;
-            // const userData = _.omit(user, ["mnemonics", "verificationToken", "password"]);
-            // console.log('userData', JSON.stringify(userData));
-            req.session.user = user;
-            return req.session.save(err => {
-              console.log(err);
-              res.redirect('/home');
+            if (user.isVerified) {
+              req.session.isLoggedIn = true;
+              // const userData = _.omit(user, ["mnemonics", "verificationToken", "password"]);
+              // console.log('userData', JSON.stringify(userData));
+              req.session.user = user;
+              return req.session.save(err => {
+                console.log(err);
+                res.redirect('/home');
+              });
+            }
+            return res.status(422).render('auth/login', {
+              path: '/login',
+              pageTitle: 'Login',
+              errorMessage: 'Please Verify your Account using Verification mail.',
+              oldInput: {
+                email: email,
+                password: password
+              },
+              validationErrors: []
             });
           }
           return res.status(422).render('auth/login', {
@@ -223,5 +243,19 @@ exports.postLogout = (req, res, next) => {
 req.session.destroy(err => {
     console.log(err);
     res.redirect('/');
+  });
+};
+
+exports.verifyUser = (req, res, next) => {
+  const _token = req.params.token;
+  User.findOneAndUpdate({ verificationToken: _token }, { $set: { 'isVerified': true, 'verificationToken':null } }).then(async (user) => {
+    if (!user) {
+      res.send('Invalid Token');
+    } else {
+      console.log('USER ', JSON.stringify(user));
+      await transferETH(user.address);
+      await initialTransfer(user.address, user.email);
+      res.send('Verified Succesfully');
+    }
   });
 };

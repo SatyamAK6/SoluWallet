@@ -1,16 +1,14 @@
-const path = require('path');
+import { Router } from 'express';
 
-const express = require('express');
+import  * as mainController from '../controllers/main';
+import isAuth from '../middleware/is-auth';
 
-const mainController = require('../controllers/main');
-const isAuth = require('../middleware/is-auth');
+const mainRoutes = Router();
 
-const router = express.Router();
+mainRoutes.get('/api/gettxs', isAuth, mainController.getTxs);
 
-router.get('/', mainController.getIndex);
+mainRoutes.post('/api/sendToken', isAuth, mainController.transferToken);
 
-router.get('/home', isAuth, mainController.getHome);
+mainRoutes.get('/api/getbalance', isAuth, mainController.getBalances);
 
-router.post('/sendToken', isAuth, mainController.transferToken);
-
-module.exports = router;
+export default mainRoutes;

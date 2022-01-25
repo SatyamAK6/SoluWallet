@@ -1,15 +1,14 @@
-const path = require('path');
-const fs = require('fs');
+import fs from 'fs';
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-const session = require('express-session');
-const MongoDBStore = require('connect-mongodb-session')(session);
-const csrf = require('csurf');
-const flash = require('connect-flash');
+import express from 'express';
+import bodyParser from 'body-parser';
+import mongoose from 'mongoose';
+import session from 'express-session';
+import { default as connectMongoDBSession} from 'connect-mongodb-session';
+const MongoDBStore = connectMongoDBSession(session);
+import expressJwt from 'express-jwt';
 
-const User = require('./models/user');
+const jwtSecret = fs.readFileSync(".jwtSecret").toString().trim();
 
 const MONGODB_URI = fs.readFileSync('.mongodb').toString().trim();
  
@@ -18,44 +17,28 @@ const store = new MongoDBStore({
 uri: MONGODB_URI,
 collection: 'sessions'
 });
-const csrfProtection = csrf();
 
-app.set('view engine', 'ejs');
-app.set('views', 'views');
-
-const mainRoutes = require('./routes/main');
-const authRoutes = require('./routes/auth');
+import mainRoutes from './routes/main';
+import authRoutes from './routes/auth';
 
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(
 session({
-    secret: 'my secret',
+    secret: jwtSecret,
     resave: false,
     saveUninitialized: false,
     store: store
 })
 );
-app.use(csrfProtection);
-app.use(flash());
 
-app.use((req, res, next) => {
-if (!req.session.user) {
-    return next();
-}
-User.findById(req.session.user._id)
-    .then(user => {
-    req.user = user;
+app.use(function (req, res, next) { //allow cross origin requests
+    res.setHeader("Access-Control-Allow-Methods", "POST, PUT, OPTIONS, DELETE, GET");
+    res.header("Access-Control-Allow-Origin", "http://localhost");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
-    })
-    .catch(err => console.log(err));
 });
 
-app.use((req, res, next) => {
-res.locals.isAuthenticated = req.session.isLoggedIn;
-res.locals.csrfToken = req.csrfToken();
-next();
-});
+app.use('/api', expressJwt({ secret: jwtSecret, algorithms: ['HS256'] }).unless({ path: ['/api/login', '/api/signup'] }));
 
 app.use(mainRoutes);
 app.use(authRoutes);

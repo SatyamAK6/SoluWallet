@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
 
@@ -26,4 +26,6 @@ const txsSchema = new Schema({
     amount: String
 });
 
-module.exports = mongoose.model('Txs', txsSchema);
+const Txs = mongoose.model('Txs', txsSchema);
+
+export default Txs;

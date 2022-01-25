@@ -1,12 +1,13 @@
-require('dotenv').config();
+// require('dotenv').config();
 
-const fs = require('fs');
+import fs from 'fs';
 
-const Web3 = require('web3');
-const nodemailer = require('nodemailer');
-const { Transaction } = require('@ethereumjs/tx');
+import Web3 from 'web3';
+import nodemailer from 'nodemailer';
+import pkg from '@ethereumjs/tx';
+const { Transaction } = pkg;
 
-const Txs = require('../models/txs');
+import Txs from '../models/txs';
 
 const pass = fs.readFileSync(".mailAuth").toString().trim();
 
@@ -22,7 +23,6 @@ var smtpTransport = nodemailer.createTransport({
     }
 });
 
-// localhost : HTTP://127.0.0.1:7545
 const web3 = new Web3(new Web3.providers.HttpProvider('HTTP://127.0.0.1:7545'));
 
 const ContractAddress = '0xE8BA2781cF10DB54C08A481c43B46A2B4D8D6159';
@@ -319,7 +319,7 @@ const sleep = (milliseconds) => {
 const secret = fs.readFileSync(".secret").toString().trim();
 const privateKey = Buffer.from(secret, 'hex');
 
-exports.transferETH = async function (toAddress) {
+export const transferETH = async function (toAddress) {
 	const count = await web3.eth.getTransactionCount('0x3E08416c5f2281520610D62363745Fe4e5e9eF37');
     const nounce = await web3.utils.toHex(count);
     const gasPrice = await web3.utils.toHex(2 * 1e9);
@@ -342,7 +342,7 @@ exports.transferETH = async function (toAddress) {
     return txx;
 }
 
-exports.initialTransfer = async function (toAddress, toMail) {
+export const initialTransfer = async function (toAddress, toMail) {
 	const amount = await web3.utils.toWei('5000', 'ether');
 	await SoluToken.methods.transfer(toAddress, await web3.utils.toHex(amount))
 		.send({ from: ownerAddress }, async function (error, txHash) {
@@ -385,7 +385,7 @@ exports.initialTransfer = async function (toAddress, toMail) {
 		});
 }
 
-exports.internalTransfer = async function (fromAddress, fromPrivateKey, fromMail, sendAmount, toAddress, toMail) {
+export const internalTransfer = async function (fromAddress, fromPrivateKey, fromMail, sendAmount, toAddress, toMail) {
 	const count = await web3.eth.getTransactionCount(fromAddress);
     const nounce = await web3.utils.toHex(count);
     const gasPrice = await web3.utils.toHex(2 * 1e9);
@@ -436,7 +436,7 @@ exports.internalTransfer = async function (fromAddress, fromPrivateKey, fromMail
 	};
 	smtpTransport.sendMail(toMailOptions, function (error, response) {
 		if (error) {
-			console.log(error);
+			console.log('TO',error);
 		}
 		else {
 			console.log('mail Sent Successfully');
@@ -444,15 +444,15 @@ exports.internalTransfer = async function (fromAddress, fromPrivateKey, fromMail
 	});
 	smtpTransport.sendMail(fromMailOptions, function (errs, resps) {
 		if (errs) {
-			console.log(errs);
+			console.log('FROM',errs);
 		} else {
 			console.log('Mail Sent Successfully');
 		}
 	});
-	return;
+	return txReceipt;
 };
 
-exports.getBalance = async function (address) {
+export const getBalance = async function (address) {
 	let balanceInWei = await SoluToken.methods.balanceOf(address).call();
 	let balance = await web3.utils.fromWei(balanceInWei, 'ether');
     return balance;

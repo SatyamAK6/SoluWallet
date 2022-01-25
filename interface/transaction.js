@@ -1,6 +1,6 @@
-const Txs = require('../models/txs');
+import Txs from '../models/txs';
 
-exports.getAllTxs = () => {
+export const getAllTxs = () => {
     const txs = Txs.find().then(txs => {
         if (!txs) {
             return [];
@@ -10,7 +10,7 @@ exports.getAllTxs = () => {
     return txs;
 };
 
-exports.getMyTxs = (_address) => {
+export const getMyTxs = (_address) => {
     const txs = Txs.find({ $or: [{ 'senderAddress': _address }, { 'receiverAddress': _address }] }).then(txs => { 
         if (!txs) {
             return [];
@@ -19,3 +19,5 @@ exports.getMyTxs = (_address) => {
     });
     return txs;
 }
+
+// export default { getAllTxs, getMyTxs };

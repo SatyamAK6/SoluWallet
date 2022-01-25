@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
 
@@ -20,7 +20,12 @@ const userSchema = new Schema({
   isVerified:{
       type:Boolean,
       required:true
+  },
+  isAdmin: {
+    type: Boolean,
+    default:false
   }
 });
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+export default User;

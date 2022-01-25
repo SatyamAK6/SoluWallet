@@ -1,0 +1,7 @@
+{
+    "web3Provider":"",
+    "mongodbUrl":"",
+    "contractAddress":"",
+    "ownerAddress":"",
+    "jwtSecret":"iT's Top Secret"
+}

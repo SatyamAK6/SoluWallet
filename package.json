@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "Wallet Based on Nodejs & Etherum",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js",
-    "start-server": "node app.js"
+    "start": "nodemon --experimental-modules --es-module-specifier-resolution=node index.js",
+    "start-server": "node --experimental-modules --es-module-specifier-resolution=node index.js"
   },
   "author": "Satyam A Khatrani",
   "license": "ISC",
@@ -26,8 +27,10 @@
     "ethereumjs-tx": "^2.1.2",
     "ethers": "^5.5.3",
     "express": "^4.17.2",
+    "express-jwt": "^6.1.0",
     "express-session": "^1.17.2",
     "express-validator": "^6.14.0",
+    "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
     "mongoose": "^6.1.6",
     "nodemailer": "^6.7.2",

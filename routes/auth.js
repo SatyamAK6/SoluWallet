@@ -1,16 +1,14 @@
-const express = require('express');
-const { check, body } = require('express-validator');
+import { Router } from 'express';
+import { body } from 'express-validator';
 
-const authController = require('../controllers/auth');
-const User = require('../models/user');
+import * as authController from '../controllers/auth';
+import User from '../models/user';
 
-const router = express.Router();
+import isAuth from '../middleware/is-auth';
 
-router.get('/login', authController.getLogin);
+const authRoutes = Router();
 
-router.get('/signup', authController.getSignup);
-
-router.post('/signup',
+authRoutes.post('/api/signup',
     body('email')
       .isEmail()
       .withMessage('Please enter a valid email.')
@@ -41,7 +39,7 @@ router.post('/signup',
       })
   , authController.postSignup);
 
-router.post('/login', body('email')
+authRoutes.post('/api/login', body('email')
   .isEmail()
   .withMessage('Please enter a valid email address.')
   .normalizeEmail(),
@@ -49,8 +47,8 @@ router.post('/login', body('email')
     .isLength({ min: 5 })
     .trim(), authController.postLogin);
 
-router.post('/logout', authController.postLogout);
+authRoutes.post('/api/logout', isAuth, authController.postLogout);
 
-router.get('/verify/:token', authController.verifyUser);
+authRoutes.get('/verify/:token', authController.verifyUser);
 
-module.exports = router;
+export default authRoutes;

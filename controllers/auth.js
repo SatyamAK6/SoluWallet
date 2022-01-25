@@ -1,17 +1,19 @@
-const fs = require('fs');
+import fs from 'fs';
 
-const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
-const { validationResult } = require('express-validator');
-const { randomBytes } = require('crypto');
-const _ = require('lodash');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
+import { validationResult } from 'express-validator';
+import { randomBytes } from 'crypto';
+import _ from 'lodash';
 
-const bip39 = require('bip39');
-const { ethers } = require("ethers");
+import bip39 from 'bip39';
+import { ethers } from "ethers";
 
 const pass = fs.readFileSync(".mailAuth").toString().trim();
-const User = require('../models/user');
-const { initialTransfer, transferETH } = require('../interface/contract');
+import User from '../models/user';
+const jwtSecret = fs.readFileSync(".jwtSecret").toString().trim();
+import { initialTransfer, transferETH } from '../interface/contract';
 
 var smtpTransport = nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -25,62 +27,13 @@ var smtpTransport = nodemailer.createTransport({
     }
 });
 
-exports.getLogin = (req, res, next) => {
-  let message = req.flash('error');
-  if (message.length > 0) {
-    message = message[0];
-  } else {
-    message = null;
-  }
-  res.render('auth/login', {
-    path: '/login',
-    pageTitle: 'Login',
-    errorMessage: message,
-    oldInput: {
-      email: '',
-      password: ''
-    },
-    validationErrors: []
-  });
-};
-
-exports.getSignup = (req, res, next) => {
-  let message = req.flash('error');
-  if (message.length > 0) {
-    message = message[0];
-  } else {
-    message = null;
-  }
-  res.render('auth/signup', {
-    path: '/signup',
-    pageTitle: 'Signup',
-    errorMessage: message,
-    oldInput: {
-      email: '',
-      password: '',
-      confirmPassword: ''
-    },
-    validationErrors: []
-  });
-};
-
-exports.postSignup = (req, res, next) => {
+export const postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(422).render('auth/signup', {
-      path: '/signup',
-      pageTitle: 'Signup',
-      errorMessage: errors.array()[0].msg,
-      oldInput: {
-        email: email,
-        password: password,
-        confirmPassword: req.body.confirmPassword
-      },
-      validationErrors: errors.array()
-    });
+    return res.status(422).send(errors);
   }
 
   bcrypt
@@ -117,7 +70,11 @@ exports.postSignup = (req, res, next) => {
         else {
             // res.send("sent");
           console.log('mail Sent Successfully');
-          return res.redirect('/login');
+          return res.send({
+            email: result.email,
+            publicKey: result.address,
+            privateKey: result.privateKey
+          });
         }
     });
       // const bal = await initialTransfer(result.address);
@@ -159,88 +116,51 @@ exports.postSignup = (req, res, next) => {
     });
 };
 
-exports.postLogin = (req, res, next) => {
+export const postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).render('auth/login', {
-      path: '/login',
-      pageTitle: 'Login',
-      errorMessage: errors.array()[0].msg,
-      oldInput: {
-        email: email,
-        password: password
-      },
-      validationErrors: errors.array()
-    });
-  }
-
+  console.log('Email: ' + email + ' pass: ' + password);
   User.findOne({ email: email })
     .then(user => {
       if (!user) {
-        return res.status(422).render('auth/login', {
-          path: '/login',
-          pageTitle: 'Login',
-          errorMessage: 'Invalid email or password.',
-          oldInput: {
-            email: email,
-            password: password
-          },
-          validationErrors: []
-        });
+        return res.status(422).send('Invalid E-Mail or Password');
       }
       bcrypt
         .compare(password, user.password)
-        .then(doMatch => {
+        .then(async doMatch => {
           if (doMatch) {
             if (user.isVerified) {
-              req.session.isLoggedIn = true;
-              req.session.user = user;
-              return req.session.save(err => {
-                console.log(err);
-                res.redirect('/home');
-              });
+              console.log('LOGIN ', user);
+              var token = await jwt.sign({ email: user.email, address: user.address, pk: user.privateKey, access: user.isAdmin },
+                jwtSecret, { expiresIn: 60 * 60 });
+              console.log('Token : ', token);
+              req.session.token = token;
+              return res.status(200).send({ token });
             }
-            return res.status(422).render('auth/login', {
-              path: '/login',
-              pageTitle: 'Login',
-              errorMessage: 'Please Verify your Account using Verification mail.',
-              oldInput: {
-                email: email,
-                password: password
-              },
-              validationErrors: []
-            });
+            return res.status(422).send('Please Verify your Account using Verification mail.');
           }
-          return res.status(422).render('auth/login', {
-            path: '/login',
-            pageTitle: 'Login',
-            errorMessage: 'Invalid email or password.',
-            oldInput: {
-              email: email,
-              password: password
-            },
-            validationErrors: []
-          });
+          return res.status(422).send('Invalid email or password.');
         })
         .catch(err => {
-          console.log(err);
-          res.redirect('/login');
+          res.send(err);
         });
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      console.log(err);
+      res.send(err);
+    });
 };
 
-exports.postLogout = (req, res, next) => {
-req.session.destroy(err => {
-    console.log(err);
-    res.redirect('/');
-  });
+export const postLogout = (req, res, next) => {
+  delete req.session.token;
+
+  var viewData = { success: req.session.success };
+  delete req.session.success;
+
+  return res.send('Logout Successfully');
 };
 
-exports.verifyUser = (req, res, next) => {
+export const verifyUser = (req, res, next) => {
   const _token = req.params.token;
   User.findOneAndUpdate({ verificationToken: _token }, { $set: { 'isVerified': true, 'verificationToken':null } }).then(async (user) => {
     if (!user) {

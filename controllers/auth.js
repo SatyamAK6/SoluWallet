@@ -10,9 +10,9 @@ import _ from 'lodash';
 import bip39 from 'bip39';
 import { ethers } from "ethers";
 
-const pass = fs.readFileSync(".mailAuth").toString().trim();
+// const pass = fs.readFileSync(".mailAuth").toString().trim();
+import config from '../config.json';
 import User from '../models/user';
-const jwtSecret = fs.readFileSync(".jwtSecret").toString().trim();
 import { initialTransfer, transferETH } from '../interface/contract';
 
 var smtpTransport = nodemailer.createTransport({
@@ -22,8 +22,8 @@ var smtpTransport = nodemailer.createTransport({
     ssl: true,
     service: "Gmail",
     auth: {
-        user: "info.solulabwallet@gmail.com",
-        pass: pass
+        user: config.mailCred.user,
+        pass: config.mailCred.pass
     }
 });
 
@@ -132,7 +132,7 @@ export const postLogin = (req, res, next) => {
             if (user.isVerified) {
               console.log('LOGIN ', user);
               var token = await jwt.sign({ email: user.email, address: user.address, pk: user.privateKey, access: user.isAdmin },
-                jwtSecret, { expiresIn: 60 * 60 });
+                config.jwtSecret, { expiresIn: 60 * 60 });
               console.log('Token : ', token);
               req.session.token = token;
               return res.status(200).send({ token });

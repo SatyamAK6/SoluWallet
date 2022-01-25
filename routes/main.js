@@ -11,4 +11,6 @@ mainRoutes.post('/api/sendToken', isAuth, mainController.transferToken);
 
 mainRoutes.get('/api/getbalance', isAuth, mainController.getBalances);
 
+mainRoutes.get('/api/sendeth/:address', isAuth, mainController.transfetEth);
+
 export default mainRoutes;

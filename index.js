@@ -8,13 +8,14 @@ import { default as connectMongoDBSession} from 'connect-mongodb-session';
 const MongoDBStore = connectMongoDBSession(session);
 import expressJwt from 'express-jwt';
 
-const jwtSecret = fs.readFileSync(".jwtSecret").toString().trim();
+import config from './config.json';
+// const jwtSecret = fs.readFileSync(".jwtSecret").toString().trim();
 
-const MONGODB_URI = fs.readFileSync('.mongodb').toString().trim();
+// const MONGODB_URI = fs.readFileSync('.mongodb').toString().trim();
  
 const app = express();
 const store = new MongoDBStore({
-uri: MONGODB_URI,
+uri: config.mongodbUrl,
 collection: 'sessions'
 });
 
@@ -24,7 +25,7 @@ import authRoutes from './routes/auth';
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(
 session({
-    secret: jwtSecret,
+    secret: config.jwtSecret,
     resave: false,
     saveUninitialized: false,
     store: store
@@ -38,13 +39,13 @@ app.use(function (req, res, next) { //allow cross origin requests
     next();
 });
 
-app.use('/api', expressJwt({ secret: jwtSecret, algorithms: ['HS256'] }).unless({ path: ['/api/login', '/api/signup'] }));
+app.use('/api', expressJwt({ secret: config.jwtSecret, algorithms: ['HS256'] }).unless({ path: ['/api/login', '/api/signup'] }));
 
 app.use(mainRoutes);
 app.use(authRoutes);
 
 mongoose
-.connect(MONGODB_URI)
+.connect(config.mongodbUrl)
 .then(result => {
 app.listen(3000);
 })

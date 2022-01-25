@@ -1,0 +1,13 @@
+{
+    "web3Provider":"ENTER_PROVIDER_HERE", 
+    "mongodbUrl":"ENTER_MONGODB_URI",
+    "contractAddress":"ENTER_CONTRACT_ADDRESS",
+    "ownerAddress":"ENTER_CONTRACT_OWNER_ADDRESS",
+    "ownerPrivateKey":"ENTER_CONTRACT_OWNER_ADDRESS_PRIVATE_KEY",
+    "jwtSecret":"ENTER_RANDOM_SECRET_STRING",
+    "mailCred":{
+        "user":"ENTER_MAIL_USERNAME",
+        "pass":"ENTER_MAIL_PASSWORD"
+    },
+    "contractABI":["ENTER_ERC20_TOKEN_CONTRACT_ABI"]
+}

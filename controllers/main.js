@@ -1,4 +1,4 @@
-import { getBalance, internalTransfer } from '../interface/contract';
+import { getBalance, internalTransfer, transferETH } from '../interface/contract';
 import { getAllTxs, getMyTxs} from '../interface/transaction';
 import User from '../models/user';
 
@@ -24,6 +24,21 @@ export const getBalances = async (req, res, next) => {
     console.log('GET BALANCE', JSON.stringify(req.user));
     const Balance = await getBalance(req.user.address);
     return res.send({ Address: req.user.address, Balance: Balance });
+}
+
+export const transfetEth = async (req, res, next) => {
+    if (req.user.access) {
+        User.findOne({ address: req.params.address }).then(async (user) => {
+            if (user) {
+                const tx = await transferETH(user.address);
+                return res.send(tx);
+            } else {
+                return res.send('User not Registered with us');
+            }
+        });
+    } else {
+        return res.send('you can not send ETH');
+    }
 }
 
 export const transferToken = async (req, res, next) => {

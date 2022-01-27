@@ -23,7 +23,8 @@ var smtpTransport = nodemailer.createTransport({
 
 const web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));
 
-const SoluToken = new web3.eth.Contract(config.contractABI, config.contractAddress ,{from:config.ownerAddress});
+const SoluToken = new web3.eth.Contract(config.contractABI, config.contractAddress, { from: config.ownerAddress });
+// console.log(SoluToken);
 
 const sleep = (milliseconds) => {
     return new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -108,24 +109,24 @@ export const internalTransfer = async function (fromAddress, fromPrivateKey, fro
 	console.log('Eth Balance', ethBal);
 	console.log('Amount', amount);
 	fromPrivateKey = fromPrivateKey.split('0x')[1];
-	console.log('User PK', fromPrivateKey);
 	const fromPK = Buffer.from(fromPrivateKey, 'hex');
-	const data = await SoluToken.methods.transfer(toAddress, amount).encodeABI();
+	const data = SoluToken.methods.transfer(toAddress, amount).encodeABI();
     const rawTransaction = {
         "from": config.ownerAddress,
         "gasPrice": gasPrice,
         "gasLimit": gasLimit,
-        "to": config.ContractAddress,
+        "to": config.contractAddress,
         "value": "0x0",
         "data": data,
         "nonce": nounce
-    }
+	}
+	
     console.log('raw tx initialized');
-    const transaction = Transaction.fromTxData(rawTransaction);
-    const signTx = transaction.sign(fromPK);
+	const transaction = Transaction.fromTxData(rawTransaction);
+	const signTx = transaction.sign(fromPK);
     const txReceipt = await web3.eth.sendSignedTransaction('0x' + signTx.serialize().toString('hex'));
-    console.log('tx Send');
 	console.log("Final Tx Hash", JSON.stringify(txReceipt));
+
 	const tx = new Txs({
 		txHash: txReceipt.transactionHash,
 		txIndex: txReceipt.transactionIndex,
